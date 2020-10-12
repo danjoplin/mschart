@@ -70,10 +70,13 @@ chart_data_fill <- function(x, values){
     names(values) <- serie_names
   }
 
-  if( !all(names(values) %in% serie_names ) )
-    stop( "values's names do not match series' names: ", paste0(shQuote(serie_names), collapse = ", "))
+  if( !all(serie_names %in% names(values)) )
+    stop("values does not contain all series names: ", paste0(shQuote(serie_names), collapse = ", "))
 
-  x$series_settings$fill[names(values)] <- values
+  # Get subset of values in serie_names
+  values_subset <- values[values %in% serie_names]
+
+  x$series_settings$fill[names(values_subset)] <- values_subset
   x
 }
 
