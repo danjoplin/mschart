@@ -43,29 +43,6 @@ chart_labels_text <- function(x, values){
   x
 }
 
-check_colors <- function(values) {
-  valid_cols <- is_valid_color(values)
-  if (any(!valid_cols))
-    stop("invalid color(s) in argument values")
-}
-
-assign_setting_values <- function(values, setting) {
-
-  serie_names <- names(setting)
-
-  if (length(values) == 1) {
-    setting[names(serie_names)] = values[[1]]
-  }
-
-  if( !all(serie_names %in% names(values)) )
-    stop("values does not contain all series names: ", paste0(shQuote(serie_names), collapse = ", "))
-
-  # Get subset of values in serie_names
-  values_subset <- values[values %in% serie_names]
-
-  setting[names(values_subset)] <- values_subset
-}
-
 
 #' @export
 #' @title Modify fill colour
@@ -80,9 +57,26 @@ assign_setting_values <- function(values, setting) {
 #' my_scatter <- chart_data_fill(my_scatter,
 #'   values = c(virginica = "#6FA2FF", versicolor = "#FF6161", setosa = "#81FF5B") )
 #' @seealso \code{\link{chart_data_stroke}}, \code{\link{chart_data_symbol}}, \code{\link{chart_data_size}}
-chart_data_fill <- function(x, values) {
-  check_colors(values)
-  assign_setting_values(values, x$series_settings$fill)
+chart_data_fill <- function(x, values){
+
+  valid_cols <- is_valid_color(values)
+  if( any(!valid_cols) )
+    stop("invalid color(s) in argument values")
+
+  serie_names <- names(x$series_settings$fill)
+
+  if( length(values) == 1 ){
+    values <- rep(values, length(serie_names))
+    names(values) <- serie_names
+  }
+
+  if( !all(serie_names %in% names(values)) )
+    stop("values does not contain all series names: ", paste0(shQuote(serie_names), collapse = ", "))
+
+  # Get subset of values in serie_names
+  values_subset <- values[values %in% serie_names]
+
+  x$series_settings$fill[names(values_subset)] <- values_subset
   x
 }
 
@@ -102,8 +96,23 @@ chart_data_fill <- function(x, values) {
 #'   values = c(virginica = "black", versicolor = "black", setosa = "black") )
 #' @seealso \code{\link{chart_data_fill}}, \code{\link{chart_data_symbol}}, \code{\link{chart_data_size}}
 chart_data_stroke <- function(x, values){
-  check_colors(values)
-  assign_setting_values(values, x$series_settings$colour)
+
+  valid_cols <- is_valid_color(values)
+  if( any(!valid_cols) )
+    stop("invalid color(s) in argument values")
+
+  serie_names <- names(x$series_settings$colour)
+
+  if( length(values) == 1 ){
+    values <- rep(values, length(serie_names))
+    names(values) <- serie_names
+  }
+
+  if( !all(names(values) %in% serie_names ) )
+    stop( "values's names do not match series' names: ", paste0(shQuote(serie_names), collapse = ", "))
+
+
+  x$series_settings$colour[names(values)] <- values
   x
 }
 
@@ -132,7 +141,18 @@ chart_data_symbol <- function(x, values){
     stop("values should have values matching ", paste0(shQuote(st_markerstyle), collapse = ", " ))
   }
 
-  assign_setting_values(values, x$series_settings$symbol)
+  serie_names <- names(x$series_settings$symbol)
+
+  if( length(values) == 1 ){
+    values <- rep(values, length(serie_names))
+    names(values) <- serie_names
+  }
+
+  if( !all(names(values) %in% serie_names ) )
+    stop( "values's names do not match series' names: ", paste0(shQuote(serie_names), collapse = ", "))
+
+
+  x$series_settings$symbol[names(values)] <- values
   x
 }
 
@@ -162,7 +182,17 @@ chart_data_size <- function(x, values){
   if( any( sign(values) < 0 ) )
     stop("values should not contain negative values")
 
-  assign_setting_values(values, x$series_settings$size)
+  serie_names <- names(x$series_settings$size)
+
+  if( length(values) == 1 ){
+    values <- rep(values, length(serie_names))
+    names(values) <- serie_names
+  }
+
+  if( !all(names(values) %in% serie_names ) )
+    stop( "values's names do not match series' names: ", paste0(shQuote(serie_names), collapse = ", "))
+
+  x$series_settings$size[names(values)] <- values
   x
 }
 
@@ -195,7 +225,17 @@ chart_data_line_width <- function(x, values){
   if( any( sign(values) < 0 ) )
     stop("values should not contain negative values")
 
-  assign_setting_values(values, x$series_settings$line_width)
+  serie_names <- names(x$series_settings$line_width)
+
+  if( length(values) == 1 ){
+    values <- rep(values, length(serie_names))
+    names(values) <- serie_names
+  }
+
+  if( !all(names(values) %in% serie_names ) )
+    stop( "values's names do not match series' names: ", paste0(shQuote(serie_names), collapse = ", "))
+
+  x$series_settings$line_width[names(values)] <- values
   x
 }
 
@@ -220,7 +260,17 @@ chart_data_smooth <- function(x, values){
     stop("smooth can only take values of 0 or 1")
   }
 
-  assign_setting_values(values, x$series_settings$symbol)
+  serie_names <- names(x$series_settings$symbol)
+
+  if( length(values) == 1 ){
+    values <- rep(values, length(serie_names))
+    names(values) <- serie_names
+  }
+
+  if( !all(names(values) %in% serie_names ) )
+    stop( "values's names do not match series' names: ", paste0(shQuote(serie_names), collapse = ", "))
+
+  x$series_settings$smooth[names(values)] <- values
   x
 }
 
