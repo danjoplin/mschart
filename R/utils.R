@@ -5,15 +5,43 @@ shape_as_series <- function(x){
   dataset <- setorderv(dataset, c(x$x, x$group) )
 
   if( !is.null(x$group)){
-    dataset[[x$group]] <- class_preserving_html_escape(dataset[[x$group]])
-    form_str <- sprintf("%s ~ %s", x$x, x$group)
-    dataset <- dcast.data.table(dataset, formula = as.formula(form_str),
-                                fun.aggregate = function(x) {x},
-                                fill = NA, value.var = x$y )
+    dataset <- groupify_data(x, dataset)
   } else {
     dataset <- dataset[, c(x$x, x$y), with = FALSE ]
   }
   as.data.frame(dataset)
+}
+
+#' @importFrom data.table as.data.table
+groupify_data <- function(x, dataset) {
+  dataset <- unique(dataset[, c(x$x, x$y, x$group), with=F])
+
+  dataset[[x$group]] <- class_preserving_html_escape(dataset[[x$group]])
+
+  square_up <- function(q) {
+    # Get the x value for this subset
+    xval <- q[1,1][[1]]
+
+    # Split by group
+    species_split <- split(q, q[[x$group]])
+
+    # Get the maximum number of rows
+    nrows <- max(sapply(species_split, nrow))
+
+    ss_vals <- as.data.table(sapply(names(species_split), function(nm) {
+      v <- species_split[[nm]][, get(x$y)]
+      # Force the length of the returned value set to equal the largest set to fill gaps with NAs
+      length(v) <- nrows
+      v
+    }, USE.NAMES = T, simplify = F))
+
+    # Add the x value (x$x) to the table
+    ss_vals[, (x$x) := xval]
+    ss_vals
+  }
+
+  # Put the data table back together
+  rbindlist(lapply(split(dataset, dataset[[x$x]]), square_up))
 }
 
 #' @importFrom htmltools htmlEscape
