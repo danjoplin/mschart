@@ -2,46 +2,36 @@
 #' @importFrom data.table as.data.table dcast.data.table setorderv
 shape_as_series <- function(x){
   dataset <- as.data.table(x$data)
-  dataset <- setorderv(dataset, c(x$x, x$group) )
 
   if( !is.null(x$group)){
     dataset <- groupify_data(x, dataset)
   } else {
+    # Happens by reference, no need to assign
+    setorderv(dataset, c(x$x))
     dataset <- dataset[, c(x$x, x$y), with = FALSE ]
   }
-  as.data.frame(dataset)
+
+  setDF(dataset)
 }
 
 #' @importFrom data.table as.data.table
 groupify_data <- function(x, dataset) {
-  dataset <- unique(dataset[, c(x$x, x$y, x$group), with=F])
 
-  dataset[[x$group]] <- class_preserving_html_escape(dataset[[x$group]])
+  unique_rows_dataset <- unique(dataset[, c(x$x, x$y, x$group), with=F])
 
-  square_up <- function(q) {
-    # Get the x value for this subset
-    xval <- q[1,1][[1]]
+  dummy_column_name <- generate_temp_column_name(unique_rows_dataset)
+  unique_rows_dataset[, (dummy_column_name):=seq(.N), keyby=c(x$x, x$group)]
 
-    # Split by group
-    species_split <- split(q, q[[x$group]])
+  ds <- dcast.data.table(unique_rows_dataset,
+                         formula = as.formula(sprintf("%s + %s ~ %s", x$x, dummy_column_name, x$group)),
+                         value.var = x$y, fill = NA)
 
-    # Get the maximum number of rows
-    nrows <- max(sapply(species_split, nrow))
+  ds[, (dummy_column_name) := NULL]
+  ds
+}
 
-    ss_vals <- as.data.table(sapply(names(species_split), function(nm) {
-      v <- species_split[[nm]][, get(x$y)]
-      # Force the length of the returned value set to equal the largest set to fill gaps with NAs
-      length(v) <- nrows
-      v
-    }, USE.NAMES = T, simplify = F))
-
-    # Add the x value (x$x) to the table
-    ss_vals[, (x$x) := xval]
-    ss_vals
-  }
-
-  # Put the data table back together
-  rbindlist(lapply(split(dataset, dataset[[x$x]]), square_up))
+generate_temp_column_name <- function(tbl) {
+  paste0(sample(letters, max(sapply(names(tbl), nchar)+1), replace = T), collapse = '')
 }
 
 #' @importFrom htmltools htmlEscape
